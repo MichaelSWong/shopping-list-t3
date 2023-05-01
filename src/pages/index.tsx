@@ -1,18 +1,25 @@
-import { type ShoppingItem } from "@prisma/client";
-import { type NextPage } from "next";
-import { useState } from "react";
-import ItemModal from "~/components/ItemModal";
-import { api } from "~/utils/api";
+import { type ShoppingItem } from '@prisma/client'
+import { type NextPage } from 'next'
+import { useState } from 'react'
+import ItemModal from '~/components/ItemModal'
+import { api } from '~/utils/api'
+import { HiX } from 'react-icons/hi'
 
 const Home: NextPage = () => {
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [items, setItems] = useState<ShoppingItem[]>([])
+  const [modalOpen, setModalOpen] = useState<boolean>(false)
 
   const { data: itemsData, isLoading } = api.items.getAll.useQuery(undefined, {
     onSuccess: (items) => setItems(items),
-  });
+  })
 
-  if (!itemsData || isLoading) return <p>Loading...</p>;
+  const { mutate: deleteItem } = api.items.deleteItem.useMutation({
+    onSuccess(shoppingItem) {
+      setItems((prev) => prev.filter((item) => item.id !== shoppingItem.id))
+    },
+  })
+
+  if (!itemsData || isLoading) return <p>Loading...</p>
 
   return (
     <>
@@ -31,15 +38,22 @@ const Home: NextPage = () => {
           </button>
         </div>
         <ul className="mt-4">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-center justify-between">
-              <span>{item.name}</span>
-            </li>
-          ))}
+          {items.map((item) => {
+            const { id, name } = item
+            return (
+              <li key={id} className="flex items-center justify-between">
+                <span>{name}</span>
+                <HiX
+                  onClick={() => deleteItem({ id })}
+                  className="cursor-pointer text-lg text-red-500"
+                />
+              </li>
+            )
+          })}
         </ul>
       </main>
     </>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
